@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Motor Control System"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="40dp" />
+
+    <Button
+        android:id="@+id/btn_start_service"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Start Floating Control"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btn_stop_service"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Stop Service"
+        android:backgroundTint="#AA0000" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Instructions:\n1. Grant overlay permission.\n2. Connect Arduino via USB.\n3. Use the floating bubble to control."
+        android:layout_marginTop="40dp"
+        android:gravity="center" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Developer: Salahuddin Hamran\nContact: 771446691"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:textColor="#888888"
+        android:textSize="12sp" />
+
+</LinearLayout>
