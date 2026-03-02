@@ -1,0 +1,8 @@
+# signing.config.properties
+# To build a signed APK, fill in your details below and rename this file to signing.properties
+# Or better, create a new file named signing.properties in the project root with these keys:
+
+KEYSTORE_FILE=C\:/Users/Munir/Documents/my-release-key.jks
+KEYSTORE_PASSWORD=your_keystore_password
+KEY_ALIAS=your_key_alias
+KEY_PASSWORD=your_key_password
