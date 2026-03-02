@@ -33,7 +33,7 @@ A professional Android application designed to control and monitor motors via US
 
 1.  **Clone the project**:
     ```bash
-    git clone https://github.com/YOUR_USERNAME/motor_ctl.git
+    git clone https://github.com/Munir600/motor_ctl.git
     ```
 2.  **Build**: Open in Android Studio and sync Gradle (requires JitPack for USB library).
 3.  **Permissions**:
@@ -43,8 +43,8 @@ A professional Android application designed to control and monitor motors via US
 
 ## 📝 Developer Credits
 
-Developed with ❤️ by **Salahuddin Hamran**
-- **Contact**: +967 771446691
+Developed with ❤️ by **Salahuddin Hamran** and **Munir Zaid**
+- **Contact**: +967 771446691  & +967 771974387
 - **Role**: Lead Developer & Designer
 
 ---
