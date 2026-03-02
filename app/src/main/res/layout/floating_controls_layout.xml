@@ -30,7 +30,8 @@
         android:rowCount="3"
         android:columnCount="3"
         android:layout_marginTop="12dp"
-        android:layout_gravity="center">
+        android:layout_gravity="center"
+        android:layoutDirection="ltr">
 
         <View android:layout_width="40dp" android:layout_height="40dp" />
         <Button android:id="@+id/btn_up" android:layout_width="60dp" android:layout_height="60dp" android:text="U" android:backgroundTint="#44FFFFFF" android:textColor="#FFFFFF" android:textSize="20sp" />
@@ -50,7 +51,8 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_marginTop="12dp">
+        android:layout_marginTop="12dp"
+        android:layoutDirection="ltr">
 
         <Button
             android:id="@+id/btn_speed_minus"
