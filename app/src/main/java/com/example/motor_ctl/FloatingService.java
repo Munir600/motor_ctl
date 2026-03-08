@@ -1,13 +1,11 @@
 package com.example.motor_ctl;
-
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
-import android.os.Build;
 import android.os.IBinder;
 import android.view.GestureDetector;
 import android.view.Gravity;
@@ -15,8 +13,8 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
@@ -66,20 +64,23 @@ public class FloatingService extends Service implements MotorManager.MotorDataLi
     private void setupGestureDetector() {
         GestureDetector gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
-            public boolean onDoubleTap(MotionEvent e) {
+            public boolean onDoubleTap(@NonNull MotionEvent e) {
                 bubbleView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
                 togglePanel();
                 return true;
             }
 
             @Override
-            public void onLongPress(MotionEvent e) {
+            public void onLongPress(@NonNull MotionEvent e) {
                 bubbleView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
                 stopSelf();
             }
         });
 
         bubbleView.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                v.performClick();
+            }
             boolean gestureHandled = gestureDetector.onTouchEvent(event);
             boolean bubbleMoved = bubbleManager.handleTouch(event);
             return gestureHandled || bubbleMoved;
@@ -87,16 +88,18 @@ public class FloatingService extends Service implements MotorManager.MotorDataLi
     }
 
     private void setupControlPanel() {
-        controlPanelView = LayoutInflater.from(this).inflate(R.layout.floating_controls_layout, null);
+        @SuppressLint("InflateParams")
+        View controlPanelView = LayoutInflater.from(this).inflate(R.layout.floating_controls_layout, null);
+        this.controlPanelView = controlPanelView;
 
         controlPanelView.setOnTouchListener((v, event) -> {
-            // Prevent clicks from passing through if needed
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                v.performClick();
+            }
             return false;
         });
 
-        int layoutType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                : WindowManager.LayoutParams.TYPE_PHONE;
+        int layoutType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
 
         controlParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -107,27 +110,42 @@ public class FloatingService extends Service implements MotorManager.MotorDataLi
         controlParams.gravity = Gravity.CENTER;
         controlParams.y = 0;
 
-        // Button listeners with Haptic Feedback
-        View.OnClickListener listener = view -> {
-            view.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
+        // Touch listener for movement buttons
+        View.OnTouchListener movementListener = (view, event) -> {
+            int action = event.getAction();
             int id = view.getId();
-            if (id == R.id.btn_up)
-                motorManager.sendCommand("U");
-            else if (id == R.id.btn_down)
-                motorManager.sendCommand("D");
-            else if (id == R.id.btn_left)
-                motorManager.sendCommand("L");
-            else if (id == R.id.btn_right)
-                motorManager.sendCommand("R");
-            else if (id == R.id.btn_stop)
+
+            if (action == MotionEvent.ACTION_DOWN) {
+                view.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
+                if (id == R.id.btn_up)
+                    motorManager.sendCommand("U");
+                else if (id == R.id.btn_down)
+                    motorManager.sendCommand("D");
+                else if (id == R.id.btn_left)
+                    motorManager.sendCommand("L");
+                else if (id == R.id.btn_right)
+                    motorManager.sendCommand("R");
+                return true;
+            } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                if (action == MotionEvent.ACTION_UP) {
+                    view.performClick();
+                }
                 motorManager.sendCommand("S");
+                return true;
+            }
+            return false;
         };
 
-        controlPanelView.findViewById(R.id.btn_up).setOnClickListener(listener);
-        controlPanelView.findViewById(R.id.btn_down).setOnClickListener(listener);
-        controlPanelView.findViewById(R.id.btn_left).setOnClickListener(listener);
-        controlPanelView.findViewById(R.id.btn_right).setOnClickListener(listener);
-        controlPanelView.findViewById(R.id.btn_stop).setOnClickListener(listener);
+        controlPanelView.findViewById(R.id.btn_up).setOnTouchListener(movementListener);
+        controlPanelView.findViewById(R.id.btn_down).setOnTouchListener(movementListener);
+        controlPanelView.findViewById(R.id.btn_left).setOnTouchListener(movementListener);
+        controlPanelView.findViewById(R.id.btn_right).setOnTouchListener(movementListener);
+
+        // Stop button remains clickable for safety
+        controlPanelView.findViewById(R.id.btn_stop).setOnClickListener(v -> {
+            v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
+            motorManager.sendCommand("S");
+        });
 
         controlPanelView.findViewById(R.id.btn_speed_plus).setOnClickListener(v -> {
             v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
@@ -146,7 +164,8 @@ public class FloatingService extends Service implements MotorManager.MotorDataLi
 
     private void updateSpeedUI() {
         ((TextView) controlPanelView.findViewById(R.id.txt_speed_level)).setText(String.valueOf(speedLevel));
-        ((TextView) controlPanelView.findViewById(R.id.txt_data)).setText("Speed: " + speedLevel);
+        String speedText = getString(R.string.speed_label, speedLevel);
+        ((TextView) controlPanelView.findViewById(R.id.txt_data)).setText(speedText);
         motorManager.setSpeed(speedLevel);
     }
 
@@ -166,19 +185,18 @@ public class FloatingService extends Service implements MotorManager.MotorDataLi
 
         if ("ONLINE".equals(status)) {
             led.setBackgroundResource(R.drawable.led_green);
-            txtStatus.setText("ONLINE");
+            txtStatus.setText(getString(R.string.status_online));
             txtStatus.setTextColor(0xFF00FF00);
         } else {
             led.setBackgroundResource(R.drawable.led_red);
-            txtStatus.setText("OFFLINE");
+            txtStatus.setText(getString(R.string.status_offline));
             txtStatus.setTextColor(0xFFFF0000);
         }
     }
 
     @Override
     public void onDataReceived(String data) {
-        // Optional: show Arduino feedback in a different way or log it
-        // and avoid overwriting the 'Speed: X' text set by the buttons
+        // Optional: show Arduino feedback
     }
 
     @Override
@@ -187,18 +205,16 @@ public class FloatingService extends Service implements MotorManager.MotorDataLi
     }
 
     private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel serviceChannel = new NotificationChannel(
-                    CHANNEL_ID, "Motor Control Service", NotificationManager.IMPORTANCE_LOW);
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(serviceChannel);
-        }
+        NotificationChannel serviceChannel = new NotificationChannel(
+                CHANNEL_ID, "Motor Control Service", NotificationManager.IMPORTANCE_LOW);
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        manager.createNotificationChannel(serviceChannel);
     }
 
     private Notification getNotification() {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Motor Control Active")
-                .setContentText("Floating overlay is running")
+                .setContentTitle(getString(R.string.notification_title))
+                .setContentText(getString(R.string.notification_text))
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .build();
     }

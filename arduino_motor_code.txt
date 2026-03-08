@@ -1,0 +1,88 @@
+/*
+ * Arduino Motor Control Sketch for motor_ctl App
+ * Supports: 
+ *   'U' - Up (Forward)
+ *   'D' - Down (Backward)
+ *   'L' - Left
+ *   'R' - Right
+ *   'S' - Stop
+ *   Commands like 'V1' to 'V10' for Speed (Velocity)
+ */
+
+// Define motor pins (example for L298N)
+const int motorA1 = 5; // Positive Motor A
+const int motorA2 = 6; // Negative Motor A
+const int motorB1 = 9; // Positive Motor B
+const int motorB2 = 10; // Negative Motor B
+
+int currentSpeed = 150; // Default speed (0-255)
+
+void setup() {
+  Serial.begin(9600); // Bluetooth module usually works at 9600
+  
+  pinMode(motorA1, OUTPUT);
+  pinMode(motorA2, OUTPUT);
+  pinMode(motorB1, OUTPUT);
+  pinMode(motorB2, OUTPUT);
+  
+  stopMotors();
+  Serial.println("Motor Controller Ready");
+}
+
+void loop() {
+  if (Serial.available() > 0) {
+    char cmd = Serial.read();
+    
+    switch (cmd) {
+      case 'U': moveForward(); break;
+      case 'D': moveBackward(); break;
+      case 'L': turnLeft(); break;
+      case 'R': turnRight(); break;
+      case 'S': stopMotors(); break;
+      case 'V': 
+        // Handle speed command (e.g., V5)
+        delay(10);
+        if (Serial.available() > 0) {
+          int level = Serial.parseInt();
+          currentSpeed = map(level, 1, 10, 50, 255);
+          Serial.print("Speed Set: "); Serial.println(currentSpeed);
+        }
+        break;
+    }
+  }
+}
+
+void moveForward() {
+  analogWrite(motorA1, currentSpeed);
+  digitalWrite(motorA2, LOW);
+  analogWrite(motorB1, currentSpeed);
+  digitalWrite(motorB2, LOW);
+}
+
+void moveBackward() {
+  digitalWrite(motorA1, LOW);
+  analogWrite(motorA2, currentSpeed);
+  digitalWrite(motorB1, LOW);
+  analogWrite(motorB2, currentSpeed);
+}
+
+void turnLeft() {
+  digitalWrite(motorA1, LOW);
+  analogWrite(motorA2, currentSpeed);
+  analogWrite(motorB1, currentSpeed);
+  digitalWrite(motorB2, LOW);
+}
+
+void turnRight() {
+  analogWrite(motorA1, currentSpeed);
+  digitalWrite(motorA2, LOW);
+  digitalWrite(motorB1, LOW);
+  analogWrite(motorB2, currentSpeed);
+}
+
+void stopMotors() {
+  digitalWrite(motorA1, LOW);
+  digitalWrite(motorA2, LOW);
+  digitalWrite(motorB1, LOW);
+  digitalWrite(motorB2, LOW);
+}

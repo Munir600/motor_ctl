@@ -1,45 +1,75 @@
-# Motor Control Android App 🚀
+# Motor Control System (Floating UI & Arduino)
 
-A professional Android application designed to control and monitor motors via USB Serial communication with Arduino. The app features a high-performance floating overlay (bubble) that remains accessible over any other application.
+This project is a comprehensive solution for controlling motors remotely via an Android application. It features a unique **Floating Overlay UI** that allows you to control your robot or machine while using other apps, and a responsive **Arduino Backend** for real-time execution.
 
-## ✨ Key Features
+---
 
-- **Floating Overlay (Bubble)**: A persistent control interface that stays on top of all apps.
-- **Physics-based Animations**: Uses `SpringAnimation` for smooth, life-like edge snapping (Magnet effect).
-- **Advanced Gestures**:
-    - `Double Tap`: Toggles the control panel visibility.
-    - `Long Press`: Closes the service completely.
-    - `Drag & Drop`: Smooth movement with automatic edge magnetizing.
-- **Glassmorphism UI**: A modern, sleek, and highly transparent user interface for the control panel.
-- **USB Serial Integration**:
-    - Supports **Arduino**, **CH340**, **FTDI**, **CP210x**, and more.
-    - Uses `usb-serial-for-android` for robust communication.
-- **Fail-Safe Mechanism**:
-    - **Watchdog**: Periodically checks and re-establishes the USB connection if lost.
-    - **Boot Start**: Automatically starts the floating service when the device boots up.
-- **Real-time Monitoring**: Displays connection status (ONLINE/OFFLINE) and speed levels.
-- **Precise Control**: Up, Down, Left, Right, Stop commands, and 10 levels of speed control.
+## 🚀 Key Features
 
-## 🛠️ Tech Stack
+### 1. Floating Control Panel (Bubbles)
+- **Always on Top**: Access motor controls from any screen.
+- **Toggleable Display**: Double-tap the floating bubble to show/hide the full control panel.
+- **Haptic Feedback**: High-quality vibration feedback on every interaction for a premium feel.
 
-- **Language**: Java
-- **UI Framework**: Native Android (XML)
-- **Overlay**: WindowManager API
-- **Animations**: AndroidX Dynamic Animation (Spring)
-- **Serial Library**: [usb-serial-for-android](https://github.com/mik3y/usb-serial-for-android)
-- **Persistence**: SharedPreferences for bubble position storage.
+### 2. Precise Touch-Based Control
+- **Joystick Logic**: The motor moves only while the button is pressed (`ACTION_DOWN`) and stops immediately upon release (`ACTION_UP`).
+- **Directional Controls**: Dedicated buttons for Up, Down, Left, Right, and an Emergency Stop.
+- **Speed Management**: 10-level speed control with real-time updates.
 
-## 📦 Installation & Setup
+### 3. Smart Connectivity
+- **Auto-Reconnect Watchdog**: The app automatically attempts to reconnect to the motor controller every 5 seconds if the connection is lost.
+- **Real-time Status**: Visible LED indicator (Green/Red) showing the connection status (ONLINE/OFFLINE).
+- **Background Service**: Runs as a foreground service to ensure it isn't killed by the Android system.
 
-1.  **Clone the project**:
-    ```bash
-    git clone https://github.com/Munir600/motor_ctl.git
-    ```
-2.  **Build**: Open in Android Studio and sync Gradle (requires JitPack for USB library).
-3.  **Permissions**:
-    - Grant **Display over other apps** (System Alert Window) on first run.
-    - Ensure **Notifications** and **USB** permissions are allowed.
-4.  **Hardware**: Connect your Arduino via an OTG cable. The app will automatically detect and prompt for USB permission.
+---
+
+## 🛠 Technology Stack
+
+- **Android (Java)**:
+    - `FloatingService`: Manages the WindowManager overlay.
+    - `MotorManager`: Handles serial/Bluetooth communication logic.
+    - `GestureDetector`: Supports double-tap and long-press interactions.
+- **Arduino (C++)**:
+    - Low-latency command processing.
+    - PWM-based speed control.
+- **Communication Protocol**:
+    - Simple Serial Protocol (UART/Bluetooth).
+
+---
+
+## 📡 Communication Protocol
+
+The Android app sends single-character string commands:
+
+| Command | Action |
+|:---:|:---|
+| **U** | Move Forward (Up) |
+| **D** | Move Backward (Down) |
+| **L** | Turn Left |
+| **R** | Turn Right |
+| **S** | Stop All Motors |
+| **VX** | Set Speed Level (X = 1 to 10) |
+
+---
+
+## ⚙️ How to Setup
+
+### 1. Android Installation
+1. Grant **"Display over other apps"** permission.
+2. Grant **"Background location/Bluetooth"** permissions (if using Bluetooth).
+3. Activate the service from the main screen.
+
+### 2. Arduino Setup
+1. Connect your Motor Driver (e.g., L298N) to the Arduino.
+2. Connect your Bluetooth module (e.g., HC-05) to the Hardware Serial (Pins 0/1).
+3. Upload the provided code in `arduino_motor_code.txt`.
+
+---
+
+## 🛡 Security & Accessibility
+- **Target SDK**: Compatible with modern Android versions (up to Android 15).
+- **Accessibility Ready**: Implements `performClick()` for screen readers and accessibility tools.
+- **Foreground Notification**: Always shows a notification to the user when the service is active, respecting privacy and transparency.
 
 ## 📝 Developer Credits
 
@@ -48,4 +78,3 @@ Developed with ❤️ by **Salahuddin Hamran** and **Munir Zaid**
 - **Role**: Lead Developer & Designer
 
 ---
-*This project was developed to provide a seamless and aesthetic interface for industrial or hobbyist motor control applications.*
