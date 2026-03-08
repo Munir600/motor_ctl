@@ -6,7 +6,7 @@
  *   'L' - Left
  *   'R' - Right
  *   'S' - Stop
- *   Commands like 'V1' to 'V10' for Speed (Velocity)
+ *   Commands like '0' to '255' for Raw PWM Speed
  */
 
 // Define motor pins (example for L298N)
@@ -18,7 +18,7 @@ const int motorB2 = 10; // Negative Motor B
 int currentSpeed = 150; // Default speed (0-255)
 
 void setup() {
-  Serial.begin(9600); // Bluetooth module usually works at 9600
+  Serial.begin(9600); // USB Serial communication at 9600 baud
   
   pinMode(motorA1, OUTPUT);
   pinMode(motorA2, OUTPUT);
@@ -31,23 +31,21 @@ void setup() {
 
 void loop() {
   if (Serial.available() > 0) {
-    char cmd = Serial.read();
+    char cmd = Serial.peek(); // Peek to check if it's a digit
     
-    switch (cmd) {
-      case 'U': moveForward(); break;
-      case 'D': moveBackward(); break;
-      case 'L': turnLeft(); break;
-      case 'R': turnRight(); break;
-      case 'S': stopMotors(); break;
-      case 'V': 
-        // Handle speed command (e.g., V5)
-        delay(10);
-        if (Serial.available() > 0) {
-          int level = Serial.parseInt();
-          currentSpeed = map(level, 1, 10, 50, 255);
-          Serial.print("Speed Set: "); Serial.println(currentSpeed);
-        }
-        break;
+    if (isdigit(cmd)) {
+      int pwmValue = Serial.parseInt();
+      currentSpeed = constrain(pwmValue, 0, 255);
+      Serial.print("Speed Set to: "); Serial.println(currentSpeed);
+    } else {
+      cmd = Serial.read(); // Read the character command
+      switch (cmd) {
+        case 'U': moveForward(); break;
+        case 'D': moveBackward(); break;
+        case 'L': turnLeft(); break;
+        case 'R': turnRight(); break;
+        case 'S': stopMotors(); break;
+      }
     }
   }
 }

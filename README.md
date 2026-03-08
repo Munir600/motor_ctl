@@ -17,8 +17,8 @@ This project is a comprehensive solution for controlling motors remotely via an 
 - **Speed Management**: 10-level speed control with real-time updates.
 
 ### 3. Smart Connectivity
-- **Auto-Reconnect Watchdog**: The app automatically attempts to reconnect to the motor controller every 5 seconds if the connection is lost.
-- **Real-time Status**: Visible LED indicator (Green/Red) showing the connection status (ONLINE/OFFLINE).
+- **Auto-Reconnect Watchdog**: The app automatically attempts to reconnect to the USB device every 5 seconds if the connection is lost.
+- **Real-time Status**: Visible LED indicator (Green/Red) showing the USB connection status (ONLINE/OFFLINE).
 - **Background Service**: Runs as a foreground service to ensure it isn't killed by the Android system.
 
 ---
@@ -27,19 +27,20 @@ This project is a comprehensive solution for controlling motors remotely via an 
 
 - **Android (Java)**:
     - `FloatingService`: Manages the WindowManager overlay.
-    - `MotorManager`: Handles serial/Bluetooth communication logic.
+    - `MotorManager`: Handles **USB Serial** communication via OTG.
     - `GestureDetector`: Supports double-tap and long-press interactions.
 - **Arduino (C++)**:
-    - Low-latency command processing.
+    - Low-latency command processing via Serial.
     - PWM-based speed control.
 - **Communication Protocol**:
-    - Simple Serial Protocol (UART/Bluetooth).
+    - **USB Serial (UART)** over OTG.
+    - Baud Rate: 9600.
 
 ---
 
 ## 📡 Communication Protocol
 
-The Android app sends single-character string commands:
+The Android app sends commands followed by a newline (`\n`):
 
 | Command | Action |
 |:---:|:---|
@@ -48,20 +49,21 @@ The Android app sends single-character string commands:
 | **L** | Turn Left |
 | **R** | Turn Right |
 | **S** | Stop All Motors |
-| **VX** | Set Speed Level (X = 1 to 10) |
+| **[0-255]** | Raw PWM value for speed (sent when speed is adjusted) |
 
 ---
 
 ## ⚙️ How to Setup
 
 ### 1. Android Installation
-1. Grant **"Display over other apps"** permission.
-2. Grant **"Background location/Bluetooth"** permissions (if using Bluetooth).
-3. Activate the service from the main screen.
+1. Grant **"Display over other apps"** permission in settings.
+2. Connect the Arduino to your phone using a **USB OTG Adapter**.
+3. Accept the USB permission prompt when it appears.
+4. Activate the service from the main screen.
 
 ### 2. Arduino Setup
 1. Connect your Motor Driver (e.g., L298N) to the Arduino.
-2. Connect your Bluetooth module (e.g., HC-05) to the Hardware Serial (Pins 0/1).
+2. Connect the Arduino's USB cable to the phone's OTG adapter.
 3. Upload the provided code in `arduino_motor_code.txt`.
 
 ---
