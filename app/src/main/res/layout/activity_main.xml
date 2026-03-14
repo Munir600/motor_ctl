@@ -35,13 +35,6 @@
         android:layout_marginTop="40dp"
         android:gravity="center" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Developer: Salahuddin Hamran\nContact: 771446691"
-        android:layout_marginTop="20dp"
-        android:gravity="center"
-        android:textColor="#888888"
-        android:textSize="12sp" />
+
 
 </LinearLayout>

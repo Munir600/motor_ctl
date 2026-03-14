@@ -8,6 +8,8 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.provider.Settings;
+import android.util.Log;
 
 import androidx.dynamicanimation.animation.DynamicAnimation;
 import androidx.dynamicanimation.animation.FloatPropertyCompat;
@@ -58,13 +60,27 @@ public class FloatingBubbleManager {
 
     public void show() {
         if (bubbleView.getParent() == null) {
-            windowManager.addView(bubbleView, params);
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
+                    Log.e("FloatingBubbleManager", "Cannot show bubble: Overlay permission not granted");
+                    return;
+                }
+                windowManager.addView(bubbleView, params);
+            } catch (WindowManager.BadTokenException e) {
+                Log.e("FloatingBubbleManager", "Failed to add bubble view: BadTokenException", e);
+            } catch (Exception e) {
+                Log.e("FloatingBubbleManager", "Unexpected error showing bubble", e);
+            }
         }
     }
 
     public void hide() {
         if (bubbleView.getParent() != null) {
-            windowManager.removeView(bubbleView);
+            try {
+                windowManager.removeView(bubbleView);
+            } catch (Exception e) {
+                Log.e("FloatingBubbleManager", "Error removing bubble view", e);
+            }
         }
     }
 
@@ -84,7 +100,11 @@ public class FloatingBubbleManager {
             case MotionEvent.ACTION_MOVE:
                 params.x = (int) (initialX + (event.getRawX() - initialTouchX));
                 params.y = (int) (initialY + (event.getRawY() - initialTouchY));
-                windowManager.updateViewLayout(bubbleView, params);
+                try {
+                    windowManager.updateViewLayout(bubbleView, params);
+                } catch (Exception e) {
+                    Log.e("FloatingBubbleManager", "Error updating bubble layout", e);
+                }
                 return true;
 
             case MotionEvent.ACTION_UP:
@@ -116,7 +136,11 @@ public class FloatingBubbleManager {
             @Override
             public void setValue(View object, float value) {
                 params.x = (int) value;
-                windowManager.updateViewLayout(bubbleView, params);
+                try {
+                    windowManager.updateViewLayout(bubbleView, params);
+                } catch (Exception e) {
+                    Log.e("FloatingBubbleManager", "Error updating bubble layout during snap", e);
+                }
             }
         };
 

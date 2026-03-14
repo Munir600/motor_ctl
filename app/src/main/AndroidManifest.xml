@@ -8,7 +8,12 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.USB_PERMISSION" />
-    <uses-feature android:name="android.hardware.usb.host" />
+    <!-- Required on Android 14+ (API 34/35) as a 'trigger' for connectedDevice FGS type -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <!-- Needed for Android 14+ to specify USB device interaction -->
+    <!--uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" tools:node="remove" /-->
+
+    <uses-feature android:name="android.hardware.usb.host"  android:required="false" />
 
     <application
         android:allowBackup="true"

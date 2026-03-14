@@ -14,9 +14,13 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.provider.Settings;
+import android.util.Log;
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import android.content.pm.ServiceInfo;
 
 public class FloatingService extends Service implements MotorManager.MotorDataListener {
     private static final String CHANNEL_ID = "FloatingServiceChannel";
@@ -44,7 +48,21 @@ public class FloatingService extends Service implements MotorManager.MotorDataLi
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
-        startForeground(1, getNotification());
+
+        if (android.os.Build.VERSION.SDK_INT >= 34) {
+            try {
+                startForeground(
+                        1,
+                        getNotification(),
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+                );
+            } catch (Exception e) {
+                Log.e("FloatingService", "Failed to start foreground service", e);
+                // If we can't start as foreground, we might need to stop or show a regular notification
+            }
+        } else {
+            startForeground(1, getNotification());
+        }
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         motorManager = MotorManager.getInstance(this);
@@ -170,27 +188,51 @@ public class FloatingService extends Service implements MotorManager.MotorDataLi
     }
 
     private void togglePanel() {
-        if (isExpanded) {
-            windowManager.removeView(controlPanelView);
-        } else {
-            windowManager.addView(controlPanelView, controlParams);
+        try {
+            if (isExpanded) {
+                if (controlPanelView.getParent() != null) {
+                    windowManager.removeView(controlPanelView);
+                }
+            } else {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+                    Log.e("FloatingService", "Cannot show panel: Overlay permission not granted");
+                    return;
+                }
+                if (controlPanelView.getParent() == null) {
+                    windowManager.addView(controlPanelView, controlParams);
+                    updateSpeedUI(); // Ensure UI is fresh
+                }
+            }
+            isExpanded = !isExpanded;
+        } catch (Exception e) {
+            Log.e("FloatingService", "Error toggling panel", e);
         }
-        isExpanded = !isExpanded;
     }
 
     @Override
     public void onStatusChanged(String status) {
+        if (bubbleView == null) return;
         View led = bubbleView.findViewById(R.id.connection_led);
-        TextView txtStatus = controlPanelView.findViewById(R.id.txt_status);
+        if (led == null) return;
 
         if ("ONLINE".equals(status)) {
             led.setBackgroundResource(R.drawable.led_green);
-            txtStatus.setText(getString(R.string.status_online));
-            txtStatus.setTextColor(0xFF00FF00);
+            if (controlPanelView != null) {
+                TextView txtStatus = controlPanelView.findViewById(R.id.txt_status);
+                if (txtStatus != null) {
+                    txtStatus.setText(getString(R.string.status_online));
+                    txtStatus.setTextColor(0xFF00FF00);
+                }
+            }
         } else {
             led.setBackgroundResource(R.drawable.led_red);
-            txtStatus.setText(getString(R.string.status_offline));
-            txtStatus.setTextColor(0xFFFF0000);
+            if (controlPanelView != null) {
+                TextView txtStatus = controlPanelView.findViewById(R.id.txt_status);
+                if (txtStatus != null) {
+                    txtStatus.setText(getString(R.string.status_offline));
+                    txtStatus.setTextColor(0xFFFF0000);
+                }
+            }
         }
     }
 
@@ -234,8 +276,11 @@ public class FloatingService extends Service implements MotorManager.MotorDataLi
     public void onDestroy() {
         watchdogHandler.removeCallbacks(watchdogRunnable);
         bubbleManager.hide();
-        if (isExpanded)
-            windowManager.removeView(controlPanelView);
+        if (isExpanded && controlPanelView != null && controlPanelView.getParent() != null) {
+            try {
+                windowManager.removeView(controlPanelView);
+            } catch (Exception ignored) {}
+        }
         motorManager.disconnect();
         super.onDestroy();
     }

@@ -27,6 +27,13 @@ public class MainActivity extends AppCompatActivity {
             requestOverlayPermission();
         }
     }
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent != null && "android.hardware.usb.action.USB_DEVICE_ATTACHED".equals(intent.getAction())) {
+            checkPermissionAndStart();
+        }
+    }
 
     private boolean hasOverlayPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
