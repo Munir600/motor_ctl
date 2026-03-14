@@ -12,6 +12,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import androidx.core.content.ContextCompat;
+
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
@@ -30,7 +32,7 @@ public class MotorManager implements SerialInputOutputManager.Listener {
     private final UsbManager usbManager;
     private UsbSerialPort usbSerialPort;
     private SerialInputOutputManager usbIoManager;
-    
+
     private boolean isConnected = false;
     private String currentStatus = "OFFLINE";
     private String lastError = "";
@@ -43,9 +45,51 @@ public class MotorManager implements SerialInputOutputManager.Listener {
 
     private MotorDataListener listener;
 
+    private final BroadcastReceiver usbReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (ACTION_USB_PERMISSION.equals(action)) {
+                synchronized (this) {
+                    UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        if (device != null) {
+                            connect();
+                        }
+                    } else {
+                        Log.d(TAG, "permission denied for device " + device);
+                        notifyError("USB Permission denied");
+                    }
+                }
+            } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
+                connect();
+            } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
+                UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                if (device != null && usbSerialPort != null &&
+                        usbSerialPort.getDriver().getDevice().equals(device)) {
+                    disconnect();
+                }
+            }
+        }
+    };
+
     private MotorManager(Context context) {
         this.context = context.getApplicationContext();
-        this.usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
+        this.usbManager = (UsbManager) this.context.getSystemService(Context.USB_SERVICE);
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(ACTION_USB_PERMISSION);
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            this.context.registerReceiver(usbReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            try {
+                ContextCompat.registerReceiver(this.context, usbReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public static synchronized MotorManager getInstance(Context context) {
@@ -57,6 +101,9 @@ public class MotorManager implements SerialInputOutputManager.Listener {
 
     public void setListener(MotorDataListener listener) {
         this.listener = listener;
+        if (this.listener != null) {
+            this.listener.onStatusChanged(currentStatus);
+        }
     }
 
     public boolean isConnected() {
@@ -91,10 +138,10 @@ public class MotorManager implements SerialInputOutputManager.Listener {
         try {
             usbSerialPort.open(connection);
             usbSerialPort.setParameters(BAUDRATE, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
-            
+
             usbIoManager = new SerialInputOutputManager(usbSerialPort, this);
             usbIoManager.start();
-            
+
             isConnected = true;
             currentStatus = "ONLINE";
             if (listener != null) listener.onStatusChanged(currentStatus);

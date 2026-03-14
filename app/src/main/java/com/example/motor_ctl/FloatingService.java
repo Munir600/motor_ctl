@@ -65,16 +65,16 @@ public class FloatingService extends Service implements MotorManager.MotorDataLi
         }
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        motorManager = MotorManager.getInstance(this);
-        motorManager.setListener(this);
-        motorManager.connect();
-
         bubbleManager = new FloatingBubbleManager(this);
         bubbleView = bubbleManager.getView();
         bubbleManager.show();
 
         setupGestureDetector();
         setupControlPanel();
+
+        motorManager = MotorManager.getInstance(this);
+        motorManager.setListener(this);
+        motorManager.connect();
 
         watchdogHandler.post(watchdogRunnable);
     }
@@ -211,29 +211,31 @@ public class FloatingService extends Service implements MotorManager.MotorDataLi
 
     @Override
     public void onStatusChanged(String status) {
-        if (bubbleView == null) return;
-        View led = bubbleView.findViewById(R.id.connection_led);
-        if (led == null) return;
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            if (bubbleView == null) return;
+            View led = bubbleView.findViewById(R.id.connection_led);
+            if (led == null) return;
 
-        if ("ONLINE".equals(status)) {
-            led.setBackgroundResource(R.drawable.led_green);
-            if (controlPanelView != null) {
-                TextView txtStatus = controlPanelView.findViewById(R.id.txt_status);
-                if (txtStatus != null) {
-                    txtStatus.setText(getString(R.string.status_online));
-                    txtStatus.setTextColor(0xFF00FF00);
+            if ("ONLINE".equals(status)) {
+                led.setBackgroundResource(R.drawable.led_green);
+                if (controlPanelView != null) {
+                    TextView txtStatus = controlPanelView.findViewById(R.id.txt_status);
+                    if (txtStatus != null) {
+                        txtStatus.setText(getString(R.string.status_online));
+                        txtStatus.setTextColor(android.graphics.Color.GREEN);
+                    }
+                }
+            } else {
+                led.setBackgroundResource(R.drawable.led_red);
+                if (controlPanelView != null) {
+                    TextView txtStatus = controlPanelView.findViewById(R.id.txt_status);
+                    if (txtStatus != null) {
+                        txtStatus.setText(getString(R.string.status_offline));
+                        txtStatus.setTextColor(android.graphics.Color.RED);
+                    }
                 }
             }
-        } else {
-            led.setBackgroundResource(R.drawable.led_red);
-            if (controlPanelView != null) {
-                TextView txtStatus = controlPanelView.findViewById(R.id.txt_status);
-                if (txtStatus != null) {
-                    txtStatus.setText(getString(R.string.status_offline));
-                    txtStatus.setTextColor(0xFFFF0000);
-                }
-            }
-        }
+        });
     }
 
     @Override
